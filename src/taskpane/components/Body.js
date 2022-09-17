@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ItemList from "./ItemList";
-import { DefaultButton } from "@fluentui/react";
+import { DefaultButton, FocusZone } from "@fluentui/react";
 
 const Body = () => {
   const [selected, setSelected] = useState("");
@@ -111,7 +111,9 @@ const Body = () => {
       <DefaultButton className="ms-welcome__action" onClick={onClickFetchList}>
         Fetch Precedent
       </DefaultButton>
-      <ItemList items={precedents} />
+      <FocusZone>
+        <ItemList items={precedents} />
+      </FocusZone>
     </div>
   );
 };

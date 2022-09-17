@@ -16,7 +16,7 @@ const ItemList = ({ items }) => {
     },
     {
       key: "column2",
-      name: "Data Preview",
+      name: "Snapshot",
       fieldName: "data",
       minWidth: 20,
       maxWidth: 200,
@@ -26,10 +26,29 @@ const ItemList = ({ items }) => {
     },
   ];
 
+  const goToPrecedent = (item) => {
+    //Use regex to split sheet name and address for data loading purpose
+    Excel.run(async (context) => {
+      const sheetAddressSplit = item.name.replace(/!([^'])/g, "**$1").split("**");
+      const sheetName = sheetAddressSplit[0].replace(/'/g, "");
+      const sheet = context.workbook.worksheets.getItem(sheetName);
+      const range = sheet.getRange(sheetAddressSplit[1]);
+
+      range.select();
+      await context.sync();
+    });
+  };
+
   return (
     <div style={{ position: "relative", height: "300px", width: "80%" }}>
       <ScrollablePane scrollbarVisibility={ScrollbarVisibility.always}>
-        <DetailsList items={items} columns={columns} isHeaderVisible={true} selectionMode={SelectionMode.none} />
+        <DetailsList
+          items={items}
+          columns={columns}
+          isHeaderVisible={true}
+          selectionMode={SelectionMode.none}
+          onActiveItemChanged={goToPrecedent}
+        />
       </ScrollablePane>
     </div>
   );
