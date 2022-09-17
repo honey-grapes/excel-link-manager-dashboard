@@ -29,6 +29,15 @@ ul {
   font-weight: lighter;
 }
 
+#scroll-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: scroll;
+}
+
 .ms-welcome__main {
   display: -webkit-flex;
   display: flex;

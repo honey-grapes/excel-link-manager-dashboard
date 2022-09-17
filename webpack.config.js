@@ -32,7 +32,7 @@ module.exports = async (env, options) => {
     module: {
       rules: [
         {
-          test: /\.jsx?$/,
+          test: /\.js$|jsx/,
           use: [
             "react-hot-loader/webpack",
             {
@@ -55,6 +55,19 @@ module.exports = async (env, options) => {
           generator: {
             filename: "assets/[name][ext][query]",
           },
+        },
+        {
+          test: /\.css$/,
+          use: [
+            { loader: "style-loader" },
+            {
+              loader: "css-loader",
+              options: {
+                modules: true,
+              },
+            },
+            { loader: "sass-loader" },
+          ],
         },
       ],
     },

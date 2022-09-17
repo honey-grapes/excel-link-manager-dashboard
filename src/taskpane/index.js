@@ -3,6 +3,9 @@ import { AppContainer } from "react-hot-loader";
 import { initializeIcons } from "@fluentui/font-icons-mdl2";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+//Inline CSS and style loaders are used since CSS cannot be loaded from the HTML file
+//This error also occurred in the default Excel Add-In welcome page
+import "style-loader!css-loader!./taskpane.css";
 
 /* global document, Office, module, require */
 
