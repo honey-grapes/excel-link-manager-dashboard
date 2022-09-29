@@ -23,9 +23,11 @@ export default class App extends React.Component {
     }
 
     return (
-      <div className="ms-welcome">
+      <div>
         <Header title={title} />
-        <Body />
+        <div className="ms-welcome">
+          <Body />
+        </div>
       </div>
     );
   }

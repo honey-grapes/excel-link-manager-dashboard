@@ -13,7 +13,7 @@ initializeIcons();
 
 let isOfficeInitialized = false;
 
-const title = "Link Dashboard";
+const title = "Link Manager Dashboard";
 
 const render = (Component) => {
   ReactDOM.render(

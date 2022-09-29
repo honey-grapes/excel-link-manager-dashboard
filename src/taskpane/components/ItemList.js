@@ -1,6 +1,6 @@
 import React from "react";
 import { DetailsList, SelectionMode } from "@fluentui/react/lib/DetailsList";
-import { ScrollablePane, ScrollbarVisibility } from "@fluentui/react";
+import { ScrollablePane } from "@fluentui/react";
 
 const ItemList = ({ items }) => {
   const columns = [
@@ -11,8 +11,6 @@ const ItemList = ({ items }) => {
       minWidth: 20,
       maxWidth: 200,
       isResizable: true,
-      isModalSelection: false,
-      styleHeader: "dataListHeader",
     },
     {
       key: "column2",
@@ -21,12 +19,10 @@ const ItemList = ({ items }) => {
       minWidth: 20,
       maxWidth: 200,
       isResizable: true,
-      isModalSelection: false,
-      styleHeader: "dataListHeader",
     },
   ];
 
-  const goToPrecedent = (item) => {
+  const goToRange = (item) => {
     //Use regex to split sheet name and address for data loading purpose
     Excel.run(async (context) => {
       const sheetAddressSplit = item.name.replace(/!([^'])/g, "**$1").split("**");
@@ -40,14 +36,14 @@ const ItemList = ({ items }) => {
   };
 
   return (
-    <div style={{ position: "relative", height: "300px", width: "80%" }}>
-      <ScrollablePane scrollbarVisibility={ScrollbarVisibility.always}>
+    <div style={{ position: "relative", height: "400px", width: "100%" }}>
+      <ScrollablePane>
         <DetailsList
           items={items}
           columns={columns}
           isHeaderVisible={true}
           selectionMode={SelectionMode.none}
-          onActiveItemChanged={goToPrecedent}
+          onActiveItemChanged={goToRange}
         />
       </ScrollablePane>
     </div>
