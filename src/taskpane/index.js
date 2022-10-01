@@ -3,9 +3,11 @@ import { AppContainer } from "react-hot-loader";
 import { initializeIcons } from "@fluentui/font-icons-mdl2";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { ToastContainer } from "react-toastify";
 //Inline CSS and style loaders are used since CSS cannot be loaded from the HTML file
 //This error also occurred in the default Excel Add-In welcome page
 import "style-loader!css-loader!./taskpane.css";
+import "style-loader!css-loader!react-toastify/dist/ReactToastify.css";
 
 /* global document, Office, module, require */
 
@@ -18,7 +20,10 @@ const title = "Link Manager Dashboard";
 const render = (Component) => {
   ReactDOM.render(
     <AppContainer>
-      <Component title={title} isOfficeInitialized={isOfficeInitialized} />
+      <div>
+        <Component title={title} isOfficeInitialized={isOfficeInitialized} />
+        <ToastContainer autoClose={2000} closeOnClick hideProgressBar={true} />
+      </div>
     </AppContainer>,
     document.getElementById("container")
   );

@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import ItemList from "./ItemList";
 import Formulas from "./Formulas";
-import { DefaultButton, Dropdown, Pivot, PivotItem } from "@fluentui/react";
+import { Pivot, PivotItem } from "@fluentui/react";
 
 const Body = () => {
+  /*===================================
+  useState
+  ===================================*/
   const [selected, setSelected] = useState("");
-  const [formulaSelected, setFormulaSelected] = useState("");
+  const [formulas, setFormulaSelected] = useState([]);
+  const [formulaList, setFormulaList] = useState([]);
   const [precedents, setPrecedents] = useState([]);
   const [dependents, setDependents] = useState([]);
+  const [offsets, setOffsets] = useState([]);
   const [history, setHistory] = useState([]);
 
+  /*===================================
+  useEffect
+  ===================================*/
   //Fire once when the component mounts to retrieve the initial selected range
   //and keep track of selection change
   useEffect(() => {
@@ -29,6 +37,117 @@ const Body = () => {
     fetchSelection();
   }, []);
 
+  //Fire everytime the formulas change for the selection to fetch
+  //and process the formula so it is good for display
+  useEffect(() => {
+    const formulaItem = [];
+    try {
+      //Single cell selection (without ':')
+      if (selected.indexOf(":") === -1) {
+        if (formulas[0][0]) {
+          const sheetAddressSplit = selected.replace(/!([^'])/g, "**$1").split("**");
+          const cell = sheetAddressSplit[1];
+          //Process cell
+          let cellNumberStart = 1;
+          for (let i = 1; i < cell.length; i++) {
+            if (/[a-zA-Z]/.test(cell[i])) {
+              continue;
+            } else {
+              cellNumberStart = i;
+              break;
+            }
+          }
+          const col = cell.slice(0, cellNumberStart);
+          const row = parseInt(cell.slice(cellNumberStart));
+          formulaItem.push({
+            key: 1,
+            col: col,
+            row: row,
+            formula: formulas[0][0],
+          });
+        }
+      }
+      //Multiple cell selection (with ':')
+      else {
+        //Read the start and end cell of the current selection so we can match
+        //each formula to the corresponding cell
+        const sheetAddressSplit = selected.replace(/!([^'])/g, "**$1").split("**");
+        const startEndSplit = sheetAddressSplit[1].split(":");
+        const startCell = startEndSplit[0];
+
+        //Process start cell
+        let cellNumberStart = 1;
+        for (let i = 1; i < startCell.length; i++) {
+          if (/[a-zA-Z]/.test(startCell[i])) {
+            continue;
+          } else {
+            cellNumberStart = i;
+            break;
+          }
+        }
+        const startCellAlphabet = startCell.slice(0, cellNumberStart);
+        const startRowInt = parseInt(startCell.slice(cellNumberStart));
+
+        //Find looping through the number of rows and columns of the formula matrix
+        //Rows = numbers and Columns = alphabets
+        //
+        //In order to loop through the columns and convert them into the
+        //correct column letters such as A, AZ, XEF...etc:
+        //  [1] Start looping from the number that corresponds to the Starting Cell's col letters
+        //  [2] Convert incremented number back to column letter for display
+        //The conversion can be done through mutiplication and division by the power of 27
+        let startColInt = 0;
+        let power = startCellAlphabet.length - 1;
+        for (let i = 0; i < startCellAlphabet.length; i++) {
+          startColInt += Math.pow(27, power - i) * (startCellAlphabet.charCodeAt(i) - 65 + 1);
+        }
+        //Start looping through the formulas matrix
+        for (let c = 0; c < formulas[0].length; c++) {
+          for (let r = 0; r < formulas.length; r++) {
+            if (formulas[r][c]) {
+              //Convert column number back to column letters
+              let powerTwo = 2;
+              let letter = "";
+              let num = c + startColInt;
+              while (power >= 0 && num > 0) {
+                let div = Math.floor(num / Math.pow(27, powerTwo));
+                if (div !== 0) {
+                  letter += String.fromCharCode(65 + div - 1);
+                  num -= div * Math.pow(27, powerTwo);
+                }
+                powerTwo -= 1;
+              }
+
+              formulaItem.push({
+                key: r.toString() + c.toString(),
+                col: letter,
+                row: r + startRowInt,
+                formula: formulas[r][c],
+              });
+            }
+          }
+        }
+      }
+
+      //Column header only added if there are formulaItems
+      //If not, notify the user there is no formula to see (cell range is empty)
+      if (formulaItem.length > 0) {
+        formulaItem.unshift({
+          key: 0,
+          col: "C",
+          row: "R",
+          formula: "Formula",
+        });
+      }
+    } catch (error) {
+      formulaItem.push();
+    }
+    setFormulaList(formulaItem);
+  }, [formulas]);
+
+  /*===================================
+  Event Handlers
+  ===================================*/
   //Update and display selection range each time the range changes
   const onSelectionChange = async () => {
     await Excel.run(async (context) => {
@@ -43,7 +162,8 @@ const Body = () => {
     });
   };
 
-  const onClickFetchList = async () => {
+  //Fetch Precedents
+  const onClickFetchPre = useCallback(async () => {
     try {
       await Excel.run(async (context) => {
         //Get precedent cell ranges
@@ -116,8 +236,56 @@ const Body = () => {
     } catch (error) {
       setPrecedents([]);
     }
+  });
+
+  //Fetch and process offset
+  const onClickFetchOffset = useCallback(() => {
+    const arr = [];
+    arr.push({ key: 0, name: "dog", data: "bro" });
+    setOffsets(arr);
+  });
+
+  //Handle different tabs in the pivot bar
+  const handleLink = ({ props }) => {
+    const { itemKey } = props;
+    switch (itemKey) {
+      case "precedents":
+        onClickFetchPre();
+        break;
+      case "offset":
+        onClickFetchOffset();
+        break;
+      case "dependents":
+        console.log("dep");
+        break;
+      default:
+        break;
+    }
+
+    //After each tab is clicked, record in history
+    //History only records the 10 most recent actions
+    if (itemKey != "history") {
+      const count = history.length + 1;
+      const curArr = history;
+      if (count > 10) {
+        curArr.pop();
+      }
+
+      const histId = Math.random().toString(36).substring(2);
+      const act = itemKey.toString();
+      curArr.unshift({
+        key: histId,
+        action: "Fetch " + act.charAt(0).toUpperCase() + act.slice(1),
+        name: selected,
+        data: selected,
+      });
+      setHistory(curArr);
+    }
   };
 
+  /*===================================
+  Custom Style
+  ===================================*/
   const pivotStyles = {
     root: {
       backgroundColor: "transparent",
@@ -162,24 +330,35 @@ const Body = () => {
         <div className="current-selection-item">
           <span className="current-selection-title-formula">Formula </span>
           <span className="current-selection-value">
-            <Formulas formulas={formulaSelected} selected={selected} />
+            <Formulas formulas={formulaList} selected={selected} />
           </span>
         </div>
       </div>
       <div className="list-body">
-        <Pivot styles={pivotStyles} onLinkClick={onClickFetchList}>
+        <Pivot styles={pivotStyles} onLinkClick={handleLink}>
           <PivotItem key="precedents" headerText="Fetch Precedents" itemKey="precedents">
-            <ItemList items={precedents} />
+            <div className="direction">
+              Go to <b>precedent</b> by clicking the corresponding line items
+            </div>
+            <ItemList items={precedents} listType="normal" />
           </PivotItem>
           <PivotItem key="dependents" headerText="Fetch Dependents" itemKey="dependents">
-            <ItemList items={precedents} />
+            <div className="direction">
+              Go to <b>dependent</b> by clicking the corresponding line items
+            </div>
+            <ItemList items={dependents} listType="normal" />
           </PivotItem>
           <PivotItem key="offset" headerText="Fetch Offset" itemKey="offset">
-            <div className="explanation">Currently only works for single cell range offset</div>
-            <ItemList items={precedents} />
+            <div className="explanation">
+              Currently only works for <b>single</b> cell range offset
+            </div>
+            <ItemList items={offsets} listType="offset" />
           </PivotItem>
           <PivotItem key="history" headerText="History" itemKey="history">
-            <ItemList items={history} />
+            <div className="direction">
+              Go to each of the <b>10 most recent actions</b> by clicking the line item
+            </div>
+            <ItemList items={history} listType="history" />
           </PivotItem>
         </Pivot>
       </div>
